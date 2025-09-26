@@ -37,8 +37,6 @@ export async function POST(req: Request) {
 
     if (ext === 'pdf') {
       // Upload PDF for context stuffing and reference via input_file
-      console.log(`[DEBUG] PDF 업로드 시작: ${name}, 크기: ${file.size}bytes`)
-
       const fileFormData = new FormData()
       fileFormData.append('purpose', 'user_data')
       fileFormData.append('file', file)
@@ -49,16 +47,13 @@ export async function POST(req: Request) {
         body: fileFormData,
       })
 
-      console.log(`[DEBUG] 파일 업로드 응답 상태: ${fileUploadResponse.status}`)
       if (!fileUploadResponse.ok) {
         const errorData = await fileUploadResponse.json().catch(() => ({}))
-        console.error("[DEBUG] 파일 업로드 오류:", errorData)
         return Response.json({ error: "파일 업로드에 실패했습니다." }, { status: 500 })
       }
 
       const fileData = await fileUploadResponse.json()
       const fileId = fileData.id
-      console.log(`[DEBUG] 파일 업로드 성공, file_id: ${fileId}`)
 
       requestBody = {
         model,
@@ -116,8 +111,6 @@ export async function POST(req: Request) {
       requestBody.reasoning = { effort: 'low' }
     }
 
-    console.log(`[DEBUG] Responses API 요청:`, JSON.stringify(requestBody, null, 2))
-
     const response = await fetch("https://api.openai.com/v1/responses", {
       method: "POST",
       headers: {
@@ -127,11 +120,8 @@ export async function POST(req: Request) {
       body: JSON.stringify(requestBody),
     })
 
-    console.log(`[DEBUG] Responses API 응답 상태: ${response.status}`)
-
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}))
-      console.error("[DEBUG] Responses API 오류:", errorData)
 
       if (response.status === 401) {
         return Response.json({ error: "유효하지 않은 API 키입니다." }, { status: 401 })
@@ -149,7 +139,6 @@ export async function POST(req: Request) {
     }
 
     const data = await response.json()
-    console.log(`[DEBUG] Responses API 응답 데이터:`, data)
 
     // Prefer convenience field; fallback to common shapes
     let resultText: string | undefined = data.output_text
@@ -172,20 +161,15 @@ export async function POST(req: Request) {
     }
 
     if (!resultText || typeof resultText !== 'string') {
-      console.error("[DEBUG] 요약 텍스트를 찾을 수 없음", { hasOutputText: !!data.output_text })
       throw new Error("요약을 생성할 수 없습니다.")
     }
-
-    console.log(`[DEBUG] 받은 텍스트:`, resultText)
 
     // JSON 블록 추출 및 파싱
     try {
       const jsonMatch = resultText.match(/\{[^{}]*\}/s)
-      console.log(`[DEBUG] JSON 매치 결과:`, jsonMatch)
 
       if (jsonMatch) {
         const jsonString = jsonMatch[0]
-        console.log(`[DEBUG] 파싱할 JSON:`, jsonString)
         const parsedData = JSON.parse(jsonString)
 
         let summary = parsedData.summary || "요약 실패"
@@ -196,9 +180,6 @@ export async function POST(req: Request) {
         const keywords = Array.isArray(parsedData.keywords)
           ? parsedData.keywords.join(", ")
           : (parsedData.keywords || "키워드 추출 실패")
-
-        console.log(`[DEBUG] 파싱된 요약:`, summary)
-        console.log(`[DEBUG] 파싱된 키워드:`, keywords)
 
         return Response.json({
           summary: summary.trim(),
@@ -216,14 +197,12 @@ export async function POST(req: Request) {
         })
       }
     } catch (parseError) {
-      console.error("JSON 파싱 오류:", parseError)
       return Response.json({
         summary: resultText.trim(),
         keywords: "키워드 추출 실패"
       })
     }
   } catch (error) {
-    console.error("Summarization error:", error)
     return Response.json({ error: "요약 생성 중 오류가 발생했습니다." }, { status: 500 })
   }
 }
