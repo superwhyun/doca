@@ -78,3 +78,33 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Markdown list styling with custom bullet points */
+.markdown-lists ul {
+  list-style: none;
+  padding-left: 0;
+  margin-left: 0.1rem;
+}
+
+.markdown-lists ul > li {
+  position: relative;
+  padding-left: 1.2rem;
+}
+
+.markdown-lists ul > li::before {
+  content: "○";
+  color: currentColor;
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 1rem;
+  text-align: center;
+}
+
+.markdown-lists ul ul > li::before {
+  content: "−";
+}
+
+.markdown-lists ul ul ul > li::before {
+  content: "•";
+}

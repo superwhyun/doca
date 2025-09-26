@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ScrollArea } from "@/components/ui/scroll-area"
 import { FileText, Copy, Download, AlertCircle, CheckCircle, Loader2, FileDown } from "lucide-react"
+import ReactMarkdown from "react-markdown"
 import type { UploadedFile } from "@/app/page"
 
 interface ResultsPaneProps {
@@ -156,9 +157,32 @@ export function ResultsPane({ files }: ResultsPaneProps) {
                         <p className="text-sm text-blue-600 dark:text-blue-400">{file.keywords}</p>
                       </div>
                     )}
-                    <div className="prose prose-sm max-w-none">
+                    <div className="prose prose-sm max-w-none dark:prose-invert">
                       <h4 className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">요약</h4>
-                      <p className="text-sm leading-relaxed whitespace-pre-wrap break-words overflow-hidden">{file.summary}</p>
+                      <div className="text-sm leading-relaxed markdown-lists">
+                        <ReactMarkdown
+                          components={{
+                            h1: ({...props}) => <h1 className="text-lg font-bold mt-4 mb-2" {...props} />,
+                            h2: ({...props}) => <h2 className="text-base font-semibold mt-3 mb-2" {...props} />,
+                            h3: ({...props}) => <h3 className="text-sm font-medium mt-2 mb-1" {...props} />,
+                            p: ({...props}) => <p className="mb-2" {...props} />,
+                            ul: ({...props}) => <ul className="mb-2 ml-4" {...props} />,
+                            ol: ({node, ...props}) => {
+                              const depth = node?.position?.start.column || 0
+                              const level = Math.floor(depth / 4)
+                              const listStyles = ['list-decimal', 'list-[lower-alpha]', 'list-[lower-roman]']
+                              const listType = listStyles[level % listStyles.length]
+                              return <ol className={`mb-2 ml-4 ${listType}`} {...props} />
+                            },
+                            li: ({...props}) => <li className="mb-1" {...props} />,
+                            strong: ({...props}) => <strong className="font-semibold" {...props} />,
+                            em: ({...props}) => <em className="italic" {...props} />,
+                            code: ({...props}) => <code className="bg-gray-100 dark:bg-gray-800 px-1 py-0.5 rounded text-xs" {...props} />,
+                          }}
+                        >
+                          {file.summary || ""}
+                        </ReactMarkdown>
+                      </div>
                     </div>
                   </CardContent>
                 </Card>

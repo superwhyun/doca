@@ -20,7 +20,7 @@ export interface UploadedFile {
 export default function Home() {
   const [files, setFiles] = useState<UploadedFile[]>([])
   const [prompt, setPrompt] = useState(
-    "다음 문서를 간결하고 명확하게 요약해 주세요. 문서번호, 제안자, 제안배경, 제안내용으로 bullet으로 나누어서 설명할 것.",
+    "다음 문서를 간결하고 명확하게 markdown으로 요약해 주세요. 문서번호, 제안자, 제안배경, 제안내용으로 bullet으로 나누어서 설명할 것.",
   )
   const [hasApiKey, setHasApiKey] = useState(false)
   const [isProcessing, setIsProcessing] = useState(false)
