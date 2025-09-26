@@ -1,0 +1,19 @@
+{
+  "watch": [
+    "app/**/*",
+    "components/**/*",
+    "lib/**/*",
+    "hooks/**/*"
+  ],
+  "ext": "js,ts,jsx,tsx,json",
+  "ignore": [
+    "node_modules",
+    ".next",
+    ".git",
+    "dist",
+    "build",
+    "*.log"
+  ],
+  "delay": 1000,
+  "verbose": true
+}
