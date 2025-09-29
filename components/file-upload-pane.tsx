@@ -5,6 +5,7 @@ import type React from "react"
 import { useCallback, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip"
 import { Upload, FileText, X, GripVertical } from "lucide-react"
 import type { UploadedFile } from "@/app/page"
 
@@ -140,8 +141,8 @@ export function FileUploadPane({ files, onFilesUploaded, onFileReorder, onFileRe
   }, [])
 
   return (
-    <Card className="h-full">
-      <CardHeader>
+    <Card className="h-full flex flex-col">
+      <CardHeader className="flex-shrink-0">
         <CardTitle className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Upload className="h-5 w-5" />
@@ -154,9 +155,9 @@ export function FileUploadPane({ files, onFilesUploaded, onFileReorder, onFileRe
           )}
         </CardTitle>
       </CardHeader>
-      <CardContent className="h-full flex flex-col">
+      <CardContent className="flex-1 flex flex-col overflow-hidden">
         <div
-          className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+          className={`flex-shrink-0 border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
             isDragOver ? "border-primary bg-primary/5" : "border-border hover:border-primary/50"
           }`}
           onDragOver={handleDragOver}
@@ -180,7 +181,7 @@ export function FileUploadPane({ files, onFilesUploaded, onFileReorder, onFileRe
           </Button>
         </div>
 
-        <div className="flex-1 mt-6 space-y-2 overflow-y-auto">
+        <div className="flex-1 mt-6 space-y-2 overflow-y-auto min-h-0">
           {files.map((file, index) => (
             <div
               key={file.id}
@@ -193,7 +194,16 @@ export function FileUploadPane({ files, onFilesUploaded, onFileReorder, onFileRe
               }`}
             >
               <GripVertical className="h-4 w-4 text-muted-foreground" />
-              <FileText className="h-4 w-4 text-primary" />
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <div className="cursor-help">
+                    <FileText className="h-4 w-4 text-primary" />
+                  </div>
+                </TooltipTrigger>
+                <TooltipContent side="top" className="bg-yellow-100 text-yellow-900 border-yellow-300">
+                  <p className="max-w-xs break-words">{file.name}</p>
+                </TooltipContent>
+              </Tooltip>
               <span className="flex-1 text-sm truncate">{file.name}</span>
               <div className="flex items-center gap-2">
                 <div

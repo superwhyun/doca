@@ -1,13 +1,16 @@
-import mammoth from 'mammoth'
+import * as mammoth from 'mammoth'
 
 export const runtime = 'nodejs'
 
 export async function POST(req: Request) {
+  let uploadedFileId: string | null = null
+  let apiKey: string | null = null
+  
   try {
     const formData = await req.formData()
     const file = formData.get('file') as File
     const prompt = formData.get('prompt') as string
-    const apiKey = formData.get('apiKey') as string
+    apiKey = formData.get('apiKey') as string
 
     if (!file || !prompt) {
       return Response.json({ error: "파일과 프롬프트가 필요합니다." }, { status: 400 })
@@ -19,7 +22,12 @@ export async function POST(req: Request) {
 
     // Prepare model and prompt
     const model = process.env.OPENAI_MODEL || "gpt-5"
-    const inputText = `다음 업로드된 파일을 분석하여 요약하고 키워드를 추출해줘.
+    const fileName = (file as any).name || 'upload'
+    const requestId = `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+    const inputText = `요청 ID: ${requestId}
+파일명: ${fileName}
+
+다음 업로드된 파일 "${fileName}"을 분석하여 요약하고 키워드를 추출해줘.
 결과는 반드시 JSON으로, 'summary'와 'keywords' 두 키를 포함해야 해.
 예시:
 {
@@ -54,6 +62,7 @@ export async function POST(req: Request) {
 
       const fileData = await fileUploadResponse.json()
       const fileId = fileData.id
+      uploadedFileId = fileId
 
       requestBody = {
         model,
@@ -84,9 +93,17 @@ export async function POST(req: Request) {
       }
     } else if (ext === 'docx') {
       // Extract final text only from DOCX via Mammoth and inline as input_text
-      const buffer = Buffer.from(await (file as any).arrayBuffer())
+      // Create a fresh buffer for each processing to avoid stream consumption issues
+      const arrayBuffer = await file.arrayBuffer()
+      const buffer = Buffer.from(arrayBuffer)
+      
+      console.log(`Processing docx file: ${name}, buffer size: ${buffer.length}`)
+      
       const { value: docxText = '' } = await mammoth.extractRawText({ buffer })
       const textContent = docxText.trim()
+      
+      console.log(`Extracted text length: ${textContent.length}, first 100 chars: ${textContent.substring(0, 100)}`)
+      
       const truncated = textContent.length > 150_000
         ? textContent.slice(0, 150_000) + `\n...[truncated ${textContent.length - 150_000} chars]`
         : textContent
@@ -121,6 +138,18 @@ export async function POST(req: Request) {
     })
 
     if (!response.ok) {
+      // Clean up uploaded file on error
+      if (uploadedFileId) {
+        try {
+          await fetch(`https://api.openai.com/v1/files/${uploadedFileId}`, {
+            method: "DELETE",
+            headers: { "Authorization": `Bearer ${apiKey}` },
+          })
+        } catch (deleteError) {
+          console.warn(`Failed to delete uploaded file ${uploadedFileId}:`, deleteError)
+        }
+      }
+
       const errorData = await response.json().catch(() => ({}))
 
       if (response.status === 401) {
@@ -139,6 +168,19 @@ export async function POST(req: Request) {
     }
 
     const data = await response.json()
+
+    // Clean up uploaded file if it exists
+    if (uploadedFileId) {
+      try {
+        await fetch(`https://api.openai.com/v1/files/${uploadedFileId}`, {
+          method: "DELETE",
+          headers: { "Authorization": `Bearer ${apiKey}` },
+        })
+      } catch (deleteError) {
+        // Log but don't fail the request if file deletion fails
+        console.warn(`Failed to delete uploaded file ${uploadedFileId}:`, deleteError)
+      }
+    }
 
     // Prefer convenience field; fallback to common shapes
     let resultText: string | undefined = data.output_text
@@ -166,7 +208,7 @@ export async function POST(req: Request) {
 
     // JSON 블록 추출 및 파싱
     try {
-      const jsonMatch = resultText.match(/\{[^{}]*\}/s)
+      const jsonMatch = resultText.match(/\{[^{}]*\}/)
 
       if (jsonMatch) {
         const jsonString = jsonMatch[0]
@@ -203,6 +245,17 @@ export async function POST(req: Request) {
       })
     }
   } catch (error) {
+    // Clean up uploaded file on error
+    if (uploadedFileId) {
+      try {
+        await fetch(`https://api.openai.com/v1/files/${uploadedFileId}`, {
+          method: "DELETE",
+          headers: { "Authorization": `Bearer ${apiKey}` },
+        })
+      } catch (deleteError) {
+        console.warn(`Failed to delete uploaded file ${uploadedFileId}:`, deleteError)
+      }
+    }
     return Response.json({ error: "요약 생성 중 오류가 발생했습니다." }, { status: 500 })
   }
 }
