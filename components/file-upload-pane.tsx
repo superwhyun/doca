@@ -56,13 +56,6 @@ export function FileUploadPane({ files, onFilesUploaded, onFileReorder, onFileRe
         return
       }
 
-      // Check file limit
-      const MAX_FILES = 20
-      if (files.length + wordFiles.length > MAX_FILES) {
-        alert(`최대 ${MAX_FILES}개의 파일까지만 업로드할 수 있습니다. (현재: ${files.length}개)`)
-        return
-      }
-
       const newFiles: UploadedFile[] = wordFiles.map(file => ({
         id: crypto.randomUUID(),
         name: file.name,
@@ -72,7 +65,7 @@ export function FileUploadPane({ files, onFilesUploaded, onFileReorder, onFileRe
 
       onFilesUploaded(newFiles)
     },
-    [onFilesUploaded],
+    [onFilesUploaded, files],
   )
 
 
@@ -92,13 +85,6 @@ export function FileUploadPane({ files, onFilesUploaded, onFileReorder, onFileRe
         return
       }
 
-      // Check file limit
-      const MAX_FILES = 20
-      if (files.length + wordFiles.length > MAX_FILES) {
-        alert(`최대 ${MAX_FILES}개의 파일까지만 업로드할 수 있습니다. (현재: ${files.length}개)`)
-        return
-      }
-
       const newFiles: UploadedFile[] = wordFiles.map(file => ({
         id: crypto.randomUUID(),
         name: file.name,
@@ -109,7 +95,7 @@ export function FileUploadPane({ files, onFilesUploaded, onFileReorder, onFileRe
       onFilesUploaded(newFiles)
       e.target.value = ""
     },
-    [onFilesUploaded],
+    [onFilesUploaded, files],
   )
 
   const handleDragStart = useCallback((e: React.DragEvent, index: number) => {

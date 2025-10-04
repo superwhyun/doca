@@ -45,13 +45,6 @@ export default function Home() {
     const pendingFiles = files.filter((file) => file.status === "pending")
     if (pendingFiles.length === 0 || !prompt.trim() || !apiKey) return
 
-    // Limit maximum files per batch
-    const MAX_FILES = 20
-    if (pendingFiles.length > MAX_FILES) {
-      alert(`한 번에 최대 ${MAX_FILES}개의 파일만 처리할 수 있습니다. ${pendingFiles.length - MAX_FILES}개 파일을 제거해주세요.`)
-      return
-    }
-
     setIsProcessing(true)
     const controller = new AbortController()
     setAbortController(controller)
